@@ -1,0 +1,3 @@
+-- H2 Database Schema for Vehicle Rental Platform
+-- Note: Tables are auto-created by Hibernate (ddl-auto=update).
+-- This file is kept for reference only. Seed data is in data.sql.

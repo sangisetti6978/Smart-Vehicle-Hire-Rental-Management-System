@@ -1,0 +1,191 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Spring Boot
+*.log
+*.gz
+*.tmp
+spring-boot-*.log
+
+# Application Properties (contains sensitive data)
+application-prod.properties
+application-local.properties
+
+# Database
+*.db
+*.sqlite
+
+# Oracle Wallet (contains sensitive credentials)
+wallet/
+*.sso
+*.p12
+cwallet.sso.lck
+ewallet.p12.lck
+tnsnames.ora
+sqlnet.ora
+
+# Uploads
+uploads/
+temp/
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.directory
+
+# Node.js (if using npm for frontend tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Secrets
+secrets/
+*.key
+*.pem
+*.crt
+*.jks
+*.p12
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*_backup
+
+# Logs
+logs/
+*.log
+log/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Test Coverage
+.jacoco/
+jacoco.exec
+coverage/
+
+# Build Artifacts
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Compiled Class Files
+*.class
+
+# Package Files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+
+# Virtual Machine Crash Logs
+hs_err_pid*
+
+# Frontend Build (if applicable)
+frontend/dist/
+frontend/build/
+
+# Documentation Build
+docs/build/
+site/
+
+# Cache
+.cache/
+*.cache
+
+# Deployment
+deploy/
+kubernetes/secrets/
+
+# Local Configuration
+local/
+local-config/
+
+# IDE-specific
+*.sublime-project
+*.sublime-workspace
+
+# Certificates & Keys (NEVER commit these)
+*.p12
+*.jks
+*.keystore
+*.truststore
+*.pem
+*.key
+*.crt
+*.cer
+
+# Sensitive Environment Files
+.envrc
+.secrets
+
+# System Files
+Desktop.ini
+ehthumbs.db
+
+# Application Specific
+application-secrets.yml
+application-secrets.properties
+jwt-secret.txt
+db-credentials.txt
+
+# Misc
+TODO.md
+NOTES.md
+.scratch/
+scratch/
