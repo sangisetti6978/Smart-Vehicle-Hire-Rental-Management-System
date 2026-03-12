@@ -30,7 +30,19 @@ function showSection(sectionName, trigger) {
 async function loadMyShops() {
     try {
         const token = localStorage.getItem('token');
-        const shops = await apiCall('/api/owner/shops', 'GET', null, token);
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        let shops = [];
+        try {
+            shops = await apiCall('/api/owner/shops', 'GET', null, token);
+            if (!Array.isArray(shops)) shops = [];
+        } catch (e) {
+            console.error('Error fetching shops:', e);
+            shops = [];
+        }
         currentShops = shops;
 
         // Stats
@@ -82,13 +94,33 @@ async function loadMyShops() {
 async function loadMyVehicles() {
     try {
         const token = localStorage.getItem('token');
-        const shops = await apiCall('/api/owner/shops', 'GET', null, token);
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        let shops = [];
+        try {
+            shops = await apiCall('/api/owner/shops', 'GET', null, token);
+        } catch (e) {
+            console.error('Error fetching shops for vehicles:', e);
+            shops = [];
+        }
 
         let allVehicles = [];
         for (const shop of shops) {
-            const vehicles = await apiCall(`/api/owner/shops/${shop.id}/vehicles`, 'GET', null, token);
-            allVehicles = allVehicles.concat(vehicles);
+            try {
+                const vehicles = await apiCall(`/api/owner/shops/${shop.id}/vehicles`, 'GET', null, token);
+                if (Array.isArray(vehicles)) {
+                    allVehicles = allVehicles.concat(vehicles);
+                }
+            } catch (e) {
+                console.error(`Error fetching vehicles for shop ${shop.id}:`, e);
+            }
         }
+
+        // Cache for edit
+        currentVehicles = allVehicles;
 
         // Stats
         const avail = allVehicles.filter(v => v.isAvailable).length;
@@ -143,14 +175,31 @@ async function loadMyVehicles() {
 async function loadMyBookings() {
     try {
         const token = localStorage.getItem('token');
-        const shops = await apiCall('/api/owner/shops', 'GET', null, token);
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        let shops = [];
+        try {
+            shops = await apiCall('/api/owner/shops', 'GET', null, token);
+            if (!Array.isArray(shops)) shops = [];
+        } catch (e) {
+            console.error('Error fetching shops for bookings:', e);
+            shops = [];
+        }
 
         let allBookings = [];
         for (const shop of shops) {
-            const bookings = await apiCall(`/api/owner/shops/${shop.id}/bookings`, 'GET', null, token);
-            allBookings = allBookings.concat(bookings);
+            try {
+                const bookings = await apiCall(`/api/owner/shops/${shop.id}/bookings`, 'GET', null, token);
+                if (Array.isArray(bookings)) {
+                    allBookings = allBookings.concat(bookings);
+                }
+            } catch (e) {
+                console.error(`Error fetching bookings for shop ${shop.id}:`, e);
+            }
         }
-
         // Stats
         const pending = allBookings.filter(b => b.status === 'PENDING').length;
         const accepted = allBookings.filter(b => b.status === 'ACCEPTED').length;
@@ -166,13 +215,11 @@ async function loadMyBookings() {
             container.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">event_busy</span><h3>No bookings yet</h3><p>Bookings from customers will appear here.</p></div>`;
             return;
         }
-
         allBookings.sort((a, b) => {
             if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
             if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
             return 0;
         });
-
         container.innerHTML = allBookings.map(b => {
             const statusClass = b.status.toLowerCase();
             const statusIcon = { pending: 'hourglass_top', accepted: 'thumb_up', completed: 'task_alt', cancelled: 'cancel', rejected: 'block' }[statusClass] || 'info';
@@ -327,7 +374,7 @@ document.getElementById('createVehicleForm').addEventListener('submit', async (e
         brand: formData.get('brand'),
         model: formData.get('model'),
         vehicleType: formData.get('vehicleType'),
-        registrationNumber: formData.get('registrationNumber'),
+        registrationNumber: formData.get('registrationNumber') || null,
         fuelType: formData.get('fuelType'),
         transmission: formData.get('transmission'),
         seatingCapacity: parseInt(formData.get('seatingCapacity')),
@@ -423,9 +470,119 @@ async function deleteVehicle(vehicleId) {
         loadMyVehicles();
     } catch (error) { alert('Failed to delete vehicle: ' + error.message); }
 }
-function editVehicle(vehicleId) {
-    alert('Vehicle edit form coming soon. Vehicle ID: ' + vehicleId);
+// ───────── EDIT VEHICLE ─────────
+let currentVehicles = [];
+
+function previewEditVehicleImage(input) {
+    const preview = document.getElementById('editVehicleImgPreview');
+    const placeholder = document.getElementById('editVehicleImgPlaceholder');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+        placeholder.style.display = '';
+    }
 }
+
+async function editVehicle(vehicleId) {
+    // Try to find the vehicle from cached data, otherwise fetch it
+    let vehicle = currentVehicles.find(v => v.id === vehicleId);
+    if (!vehicle) {
+        try {
+            const token = localStorage.getItem('token');
+            vehicle = await apiCall(`/api/vehicles/${vehicleId}`, 'GET', null, token);
+        } catch (err) {
+            alert('Failed to load vehicle details: ' + err.message);
+            return;
+        }
+    }
+    if (!vehicle) {
+        alert('Vehicle not found');
+        return;
+    }
+
+    // Populate edit form
+    document.getElementById('editVehicleId').value = vehicleId;
+    document.getElementById('editVehicleName').value = vehicle.vehicleName || '';
+    document.getElementById('editRegistrationNumber').value = vehicle.registrationNumber || '';
+    document.getElementById('editVehicleType').value = vehicle.vehicleType || 'CAR';
+    document.getElementById('editVehicleBrand').value = vehicle.brand || '';
+    document.getElementById('editVehicleModel').value = vehicle.model || '';
+    document.getElementById('editFuelType').value = vehicle.fuelType || 'PETROL';
+    document.getElementById('editTransmission').value = vehicle.transmission || 'MANUAL';
+    document.getElementById('editSeatingCapacity').value = vehicle.seatingCapacity || '';
+    document.getElementById('editPricePerDay').value = vehicle.pricePerDay || '';
+    document.getElementById('editVehicleDescription').value = vehicle.description || '';
+
+    // Show current image if exists
+    const preview = document.getElementById('editVehicleImgPreview');
+    const placeholder = document.getElementById('editVehicleImgPlaceholder');
+    const fileInput = document.getElementById('editVehicleImageFile');
+    fileInput.value = '';
+    if (vehicle.imageUrl) {
+        preview.src = resolveVehicleImg(vehicle.imageUrl, vehicle.vehicleName);
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        preview.style.display = 'none';
+        placeholder.style.display = '';
+    }
+
+    document.getElementById('editVehicleModal').classList.add('open');
+}
+
+document.getElementById('editVehicleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const vehicleId = document.getElementById('editVehicleId').value;
+
+    // Upload new image if selected
+    let imageUrl = null;
+    const fileInput = document.getElementById('editVehicleImageFile');
+    if (fileInput.files && fileInput.files[0]) {
+        try {
+            imageUrl = await uploadVehicleImage(fileInput.files[0]);
+        } catch (err) {
+            alert('Image upload failed: ' + err.message);
+            return;
+        }
+    }
+
+    // Find existing vehicle to preserve fields not in the form
+    const existing = currentVehicles.find(v => v.id == vehicleId) || {};
+
+    const updated = {
+        vehicleName: document.getElementById('editVehicleName').value,
+        registrationNumber: document.getElementById('editRegistrationNumber').value || null,
+        vehicleType: document.getElementById('editVehicleType').value,
+        brand: document.getElementById('editVehicleBrand').value,
+        model: document.getElementById('editVehicleModel').value,
+        fuelType: document.getElementById('editFuelType').value,
+        transmission: document.getElementById('editTransmission').value,
+        seatingCapacity: parseInt(document.getElementById('editSeatingCapacity').value),
+        pricePerDay: parseFloat(document.getElementById('editPricePerDay').value),
+        description: document.getElementById('editVehicleDescription').value,
+        imageUrl: imageUrl || existing.imageUrl || '',
+        shopId: existing.shopId,
+        isAvailable: existing.isAvailable !== undefined ? existing.isAvailable : true,
+        isActive: existing.isActive !== undefined ? existing.isActive : true
+    };
+
+    try {
+        const token = localStorage.getItem('token');
+        await apiCall(`/api/owner/vehicles/${vehicleId}`, 'PUT', updated, token);
+        alert('Vehicle updated successfully!');
+        closeModal('editVehicleModal');
+        loadMyVehicles();
+    } catch (error) {
+        alert('Failed to update vehicle: ' + error.message);
+    }
+});
 async function acceptBooking(bookingId) {
     try {
         const token = localStorage.getItem('token');

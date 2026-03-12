@@ -54,10 +54,10 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         
-        <!-- H2 In-Memory Database -->
+        <!-- Oracle JDBC Driver -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
             <scope>runtime</scope>
         </dependency>
         

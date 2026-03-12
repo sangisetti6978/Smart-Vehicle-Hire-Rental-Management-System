@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,7 +36,9 @@ public class Payment {
     @Column(name = "transaction_id")
     private String transactionId;
     
-    @CreationTimestamp
+    @Column(name = "payer_info")
+    private String payerInfo;
+    
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
     

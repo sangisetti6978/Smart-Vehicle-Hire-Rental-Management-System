@@ -3,9 +3,13 @@ package com.vehiclerental.controller;
 import com.vehiclerental.model.User;
 import com.vehiclerental.model.Shop;
 import com.vehiclerental.model.Vehicle;
+import com.vehiclerental.model.Payment;
+import com.vehiclerental.dto.BookingDTO;
 import com.vehiclerental.service.UserService;
 import com.vehiclerental.service.ShopService;
 import com.vehiclerental.service.VehicleService;
+import com.vehiclerental.service.BookingService;
+import com.vehiclerental.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +36,12 @@ public class AdminController {
     
     @Autowired
     private VehicleService vehicleService;
+    
+    @Autowired
+    private BookingService bookingService;
+    
+    @Autowired
+    private PaymentService paymentService;
     
     // User Management
     @GetMapping("/users")
@@ -109,5 +119,25 @@ public class AdminController {
     @Operation(summary = "Toggle vehicle status", description = "Activate or deactivate a vehicle listing")
     public ResponseEntity<Vehicle> toggleVehicleStatus(@PathVariable Long id) {
         return ResponseEntity.ok(vehicleService.toggleVehicleStatus(id));
+    }
+    
+    // Booking Management
+    @GetMapping("/bookings")
+    @Operation(summary = "Get all bookings", description = "Get list of all bookings with payment details")
+    public ResponseEntity<List<BookingDTO>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+    
+    @PutMapping("/bookings/{id}/complete")
+    @Operation(summary = "Complete booking", description = "Mark a booking as completed")
+    public ResponseEntity<?> completeBooking(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.completeBooking(id));
+    }
+    
+    // Payment Management
+    @GetMapping("/payments")
+    @Operation(summary = "Get all payments", description = "Get list of all payments")
+    public ResponseEntity<List<Payment>> getAllPayments() {
+        return ResponseEntity.ok(paymentService.getAllPayments());
     }
 }

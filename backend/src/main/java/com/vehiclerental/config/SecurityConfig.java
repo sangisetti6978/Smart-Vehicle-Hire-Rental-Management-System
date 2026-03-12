@@ -19,7 +19,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 
@@ -65,6 +64,12 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/", "/index.html", "/login.html", "/register.html",
+                        "/login-*.html", "/register-*.html", "/choose-role.html",
+                        "/owner-dashboard.html", "/customer-dashboard.html",
+                        "/admin-dashboard.html", "/vehicle-search.html",
+                        "/vehicle-details.html", "/profile.html", "/connection-test.html",
+                        "/css/**", "/js/**", "/images/**", "/assets/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/owner/**").hasRole("OWNER")
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
@@ -79,25 +84,18 @@ public class SecurityConfig {
     
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfigurationSource source = new CorsConfigurationSource() {
-            @Override
-            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-                CorsConfiguration configuration = new CorsConfiguration();
-                String origin = request.getHeader("Origin");
-                // file:// URLs send "null" as origin - handle explicitly
-                if (origin == null || "null".equals(origin)) {
-                    configuration.setAllowedOrigins(List.of("null"));
-                } else {
-                    configuration.setAllowedOrigins(List.of(origin));
-                }
-                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-                configuration.setAllowedHeaders(Arrays.asList("*"));
-                configuration.setExposedHeaders(Arrays.asList("Authorization"));
-                configuration.setAllowCredentials(true);
-                configuration.setMaxAge(3600L);
-                return configuration;
-            }
-        };
+        CorsConfiguration configuration = new CorsConfiguration();
+        // Allow all origins via patterns (compatible with allowCredentials=true)
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        org.springframework.web.cors.UrlBasedCorsConfigurationSource source =
+                new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

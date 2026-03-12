@@ -4,8 +4,10 @@ import com.vehiclerental.dto.BookingDTO;
 import com.vehiclerental.dto.SearchRequest;
 import com.vehiclerental.dto.VehicleDTO;
 import com.vehiclerental.model.Booking;
+import com.vehiclerental.model.Payment;
 import com.vehiclerental.model.Review;
 import com.vehiclerental.service.BookingService;
+import com.vehiclerental.service.PaymentService;
 import com.vehiclerental.service.ReviewService;
 import com.vehiclerental.service.UserService;
 import com.vehiclerental.service.VehicleService;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,6 +42,9 @@ public class CustomerController {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private PaymentService paymentService;
     
     @GetMapping("/vehicles/search")
     @Operation(summary = "Search vehicles", description = "Search and filter vehicles by location, type, brand, and price range")
@@ -100,5 +106,37 @@ public class CustomerController {
     @Operation(summary = "Get vehicle reviews", description = "Get all reviews for a specific vehicle")
     public ResponseEntity<List<Review>> getVehicleReviews(@PathVariable Long vehicleId) {
         return ResponseEntity.ok(reviewService.getReviewsByVehicle(vehicleId));
+    }
+    
+    @GetMapping("/bookings/{bookingId}/payment")
+    @Operation(summary = "Get payment for booking", description = "Get payment details for a specific booking")
+    public ResponseEntity<Payment> getPaymentForBooking(@PathVariable Long bookingId) {
+        return ResponseEntity.ok(paymentService.getPaymentByBooking(bookingId));
+    }
+    
+    @PostMapping("/bookings/{bookingId}/payment")
+    @Operation(summary = "Process payment", description = "Process payment for an accepted booking")
+    @Transactional
+    public ResponseEntity<Payment> processPayment(@PathVariable Long bookingId, @RequestBody java.util.Map<String, String> paymentDetails) {
+        Payment payment = paymentService.getPaymentByBooking(bookingId);
+        
+        if (payment.getPaymentStatus() == Payment.PaymentStatus.COMPLETED) {
+            throw new IllegalArgumentException("Payment has already been completed");
+        }
+        
+        payment.setPaymentMethod(paymentDetails.get("paymentMethod"));
+        payment.setTransactionId("TXN" + System.currentTimeMillis());
+        if (paymentDetails.get("payerInfo") != null) {
+            payment.setPayerInfo(paymentDetails.get("payerInfo"));
+        }
+        payment.setPaymentStatus(Payment.PaymentStatus.COMPLETED);
+        payment.setPaymentDate(java.time.LocalDateTime.now());
+        
+        Payment updatedPayment = paymentService.createPayment(payment);
+        
+        // Update booking status to COMPLETED after successful payment
+        bookingService.completeBooking(bookingId);
+        
+        return ResponseEntity.ok(updatedPayment);
     }
 }

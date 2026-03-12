@@ -3,8 +3,10 @@ package com.vehiclerental.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
@@ -23,5 +25,21 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/vehicles/**")
                 .addResourceLocations(absolutePath)
                 .setCachePeriod(3600);
+
+        // Serve the frontend directory so the UI is accessible on the same origin
+        Path frontendDir = Paths.get(System.getProperty("user.dir")).resolve("../frontend").normalize();
+        String frontendPath = frontendDir.toUri().toString();
+        if (!frontendPath.endsWith("/")) {
+            frontendPath += "/";
+        }
+        registry.addResourceHandler("/**")
+                .addResourceLocations(frontendPath)
+                .setCachePeriod(0);
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        // Redirect root to index.html
+        registry.addViewController("/").setViewName("forward:/index.html");
     }
 }

@@ -23,4 +23,9 @@ public class BookingDTO {
     private LocalDateTime bookingDate;
     private LocalDateTime confirmationDeadline;
     private String notes;
+    private String paymentStatus;
+    private Long paymentId;
+    private String paymentMethod;
+    private String transactionId;
+    private String paymentDate;
 }

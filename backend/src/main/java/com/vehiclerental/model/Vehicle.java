@@ -36,7 +36,7 @@ public class Vehicle {
     @Column(name = "vehicle_type")
     private VehicleType vehicleType;
     
-    @Column(name = "registration_number", unique = true)
+    @Column(name = "registration_number")
     private String registrationNumber;
     
     @Enumerated(EnumType.STRING)

@@ -5,7 +5,9 @@ import com.vehiclerental.model.Booking;
 import com.vehiclerental.model.Shop;
 import com.vehiclerental.model.User;
 import com.vehiclerental.model.Vehicle;
+import com.vehiclerental.model.Payment;
 import com.vehiclerental.repository.BookingRepository;
+import com.vehiclerental.repository.PaymentRepository;
 import com.vehiclerental.repository.ShopRepository;
 import com.vehiclerental.repository.UserRepository;
 import com.vehiclerental.repository.VehicleRepository;
@@ -40,6 +42,9 @@ public class BookingService {
     
     @Autowired
     private EmailService emailService;
+    
+    @Autowired
+    private PaymentRepository paymentRepository;
     
     @Value("${booking.cancellation.delay}")
     private long cancellationDelay; // 2 hours in milliseconds
@@ -102,6 +107,12 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
     
+    public List<BookingDTO> getAllBookings() {
+        return bookingRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+    
     public List<BookingDTO> getBookingsByShop(Long shopId) {
         return bookingRepository.findByShopId(shopId).stream()
                 .map(this::convertToDTO)
@@ -124,6 +135,16 @@ public class BookingService {
         
         booking.setStatus(Booking.BookingStatus.ACCEPTED);
         Booking updatedBooking = bookingRepository.save(booking);
+        
+        // Auto-create a pending payment for this booking
+        if (!paymentRepository.findByBookingId(bookingId).isPresent()) {
+            Payment payment = new Payment();
+            payment.setBookingId(bookingId);
+            payment.setAmount(updatedBooking.getTotalPrice());
+            payment.setPaymentStatus(Payment.PaymentStatus.PENDING);
+            payment.setPaymentDate(java.time.LocalDateTime.now());
+            paymentRepository.save(payment);
+        }
         
         // Send confirmation to customer
         emailService.sendBookingConfirmationToCustomer(updatedBooking);
@@ -238,6 +259,17 @@ public class BookingService {
         if (shop != null) {
             dto.setShopName(shop.getShopName());
         }
+        
+        // Get payment details
+        paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+            dto.setPaymentStatus(payment.getPaymentStatus().name());
+            dto.setPaymentId(payment.getId());
+            dto.setPaymentMethod(payment.getPaymentMethod());
+            dto.setTransactionId(payment.getTransactionId());
+            if (payment.getPaymentDate() != null) {
+                dto.setPaymentDate(payment.getPaymentDate().toString());
+            }
+        });
         
         return dto;
     }

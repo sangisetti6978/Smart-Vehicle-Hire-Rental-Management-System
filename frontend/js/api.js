@@ -1,5 +1,5 @@
 // API Configuration — uses current hostname so it works from any device
-const API_BASE_URL = `http://${window.location.hostname}:8888`;
+const API_BASE_URL = `http://${window.location.hostname || 'localhost'}:8888`;
 
 // Resolve vehicle image URL — handles server-relative paths, full URLs, and missing images
 function resolveVehicleImg(url, fallbackName) {
@@ -13,7 +13,6 @@ async function apiCall(endpoint, method = 'GET', data = null, token = null) {
     const headers = {
         'Content-Type': 'application/json'
     };
-    
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
@@ -35,15 +34,11 @@ async function apiCall(endpoint, method = 'GET', data = null, token = null) {
             if (response.status === 401 || response.status === 403) {
                 // Check if this is an API call that requires auth (not login/register)
                 if (!endpoint.startsWith('/api/auth/')) {
-                    console.warn('Auth failed (token may be expired/invalid). Redirecting to login.');
+                    console.warn('Auth failed (token may be expired/invalid). Status:', response.status);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    // Redirect to appropriate login page based on the endpoint
-                    let loginPage = 'choose-role.html';
-                    if (endpoint.includes('/api/owner/')) loginPage = 'login-owner.html';
-                    else if (endpoint.includes('/api/customer/')) loginPage = 'login-customer.html';
-                    else if (endpoint.includes('/api/admin/')) loginPage = 'login.html?role=admin';
-                    window.location.href = loginPage;
+                    // Delay redirect so callers can catch the error
+                    setTimeout(() => { window.location.href = 'login.html'; }, 100);
                     throw new Error('Session expired. Please login again.');
                 }
             }
@@ -62,6 +57,10 @@ async function apiCall(endpoint, method = 'GET', data = null, token = null) {
         if (!text) return null;
         return JSON.parse(text);
     } catch (error) {
+        if (error.message === 'Failed to fetch') {
+            console.error('Network error — is the backend running on ' + API_BASE_URL + '?');
+            throw new Error('Cannot connect to server. Please check if the backend is running.');
+        }
         console.error('API call error:', error);
         throw error;
     }
